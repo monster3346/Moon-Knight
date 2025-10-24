@@ -1,6 +1,6 @@
 /* =========================================================
    Moon Learn 学 – Ôn & Thi Trắc Nghiệm
-   Phiên bản: thang điểm 10, tự chuyển câu, hiện đáp án đúng khi sai
+   Phiên bản: dùng mammoth (giữ nguyên gốc) + thang 10 + tự chuyển câu + hiện đáp án đúng
    ========================================================= */
 let questions   = [],
     current     = 0,
@@ -9,15 +9,8 @@ let questions   = [],
     userAns     = [],
     pdfItems    = [];
 
-/* ---------- 0. Khối ẩn chứa DOCX render ---------- */
-const hiddenDiv = document.createElement('div');
-hiddenDiv.id = 'hiddenDocx';
-hiddenDiv.style.position = 'absolute';
-hiddenDiv.style.left = '-9999px';
-document.body.appendChild(hiddenDiv);
-
 /* =========================================================
-   1. ĐỌC FILE PDF / DOCX (KHÔNG ĐỔI)
+   1. ĐỌC FILE PDF / DOCX – DÙNG MAMMOTH CHO DOCX
    ========================================================= */
 const fileInput = document.getElementById('fileInput');
 fileInput.addEventListener('change', async (e) => {
@@ -51,22 +44,20 @@ async function readPDF(file) {
 
 async function readDOCX(file) {
   try {
-    const ab   = await file.arrayBuffer();
-    const hide = document.getElementById('hiddenDocx');
-    await docx.renderAsync(ab, hide);
-    const text = hide.innerText || hide.textContent || '';
-    questions  = parseQuestions(text);
+    const ab = await file.arrayBuffer();
+    const res = await mammoth.extractRawText({ arrayBuffer: ab });
+    const text = res.value;
+    questions = parseQuestions(text);
   } catch (err) {
     alert('Lỗi đọc DOCX: ' + err.message);
   }
 }
 
 /* =========================================================
-   2. TÁCH CÂU HỎI & ĐÁP ÁN (KHÔNG ĐỔI)
+   2. TÁCH CÂU HỎI & ĐÁP ÁN – GIỮ NGUYÊN MAMMOTH
    ========================================================= */
 function parseQuestions(text, pdfItems = []) {
-  text = text.replace(/\r/g, '\n');
-  const QUESTION_RE = /Câu\s*\d+\s*[:.)\-]/gi;
+  const QUESTION_RE = /Câu\s*\d+\s*[:.\-)]/gi;
   const blocks = text.split(QUESTION_RE).filter(b => b.trim());
   const out = [];
 
@@ -78,11 +69,11 @@ function parseQuestions(text, pdfItems = []) {
     let correct = null;
 
     /* 2.1 Tìm “Đáp án: B” */
-    const answerRegex = /Đáp\s*án\s*(đúng)?\s*[:–—\-]\s*([A-D])/i;
+    const answerRegex = /Đáp\s*án[:\-\s]*([A-D])/i;
     let answerLabel = null;
     for (const l of lines) {
       const m = l.match(answerRegex);
-      if (m) { answerLabel = m[2].toUpperCase(); break; }
+      if (m) { answerLabel = m[1].toUpperCase(); break; }
     }
 
     /* 2.2 Thu gom A. xxx … */
@@ -93,47 +84,19 @@ function parseQuestions(text, pdfItems = []) {
       const label = m[1].toUpperCase();
       let optText = m[2].trim();
 
-      /* style HTML */
-      let bold = false, italic = false, underline = false, color = null;
-      if (line.includes('<b>') || line.includes('strong')) bold = true;
-      if (line.includes('<i>') || line.includes('em')) italic = true;
-      if (line.includes('<u>') || line.includes('text-decoration:underline')) underline = true;
-      const colorM = line.match(/color[:=]\s*([^";)\s]+)/i);
-      if (colorM) color = colorM[1].toLowerCase();
-
       /* ký tự đầu * hoặc • */
       const star = line.startsWith('*') || line.startsWith('•');
-
-      /* PDF style */
-      if (pdfItems.length) {
-        const it = pdfItems.find(it => it.str === optText);
-        if (it) {
-          if (it.transform && it.transform.join('').includes('Bold')) bold = true;
-          if (it.fontName && it.fontName.toLowerCase().includes('bold')) bold = true;
-          if (it.color) {
-            const rgb = it.color.map(c => Math.round(c * 255).toString(16).padStart(2, '0'));
-            color = `#${rgb.join('')}`;
-          }
-        }
-      }
-
-      options.push({ label, text: optText, bold, italic, underline, color, star });
+      options.push({ label, text: optText, star });
     });
 
     if (options.length < 2) return;
 
     /* 2.3 Xác định đáp án đúng */
     if (answerLabel) {
-      const found = options.find(o => o.label === answerLabel);
-      if (found) correct = found.text;
+      const idx = answerLabel.charCodeAt(0) - 65;
+      if (options[idx]) correct = options[idx].text;
     } else {
-      const colors = options.map(o => o.color).filter(Boolean);
-      const uniqueColor = colors.length
-        ? colors.find(c => colors.indexOf(c) === colors.lastIndexOf(c))
-        : null;
-      const target = options.find(o =>
-        o.star || o.color === uniqueColor || o.bold || o.italic || o.underline
-      );
+      const target = options.find(o => o.star);
       if (target) correct = target.text;
     }
 
