@@ -49,10 +49,15 @@ async function readPDF(file) {
 }
 
 async function readDOCX(file) {
-  const ab = await file.arrayBuffer();
-  await docx.renderAsync(ab, hiddenDiv);
-  const text = hiddenDiv.innerText || hiddenDiv.textContent || '';
-  questions = parseQuestions(text);
+  try {
+    const ab   = await file.arrayBuffer();
+    const hide = document.getElementById('hiddenDocx');
+    await docx.renderAsync(ab, hide);          // render trước
+    const text = hide.innerText || hide.textContent || '';
+    questions  = parseQuestions(text);         // sau đó mới parse
+  } catch (err) {
+    alert('Lỗi đọc DOCX: ' + err.message);
+  }
 }
 
 /* =========================================================
