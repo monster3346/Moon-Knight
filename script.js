@@ -4,6 +4,7 @@ const fileInput = document.getElementById('fileInput');
 const quizArea = document.getElementById('quizArea');
 const resultDiv = document.getElementById('result');
 
+/* ------------------ Đọc file PDF / DOCX ------------------ */
 fileInput.addEventListener('change', async e => {
   const file = e.target.files[0]; if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
@@ -35,6 +36,7 @@ fileInput.addEventListener('change', async e => {
   }
 });
 
+/* ------------------ Phân tích câu hỏi ------------------ */
 function parseQuestions(text, pdfItems = []) {
   const QUESTION_RE = /Câu\s*\d+\s*[:.\-)]/gi;
   const blocks = text.split(QUESTION_RE).filter(b => b.trim());
@@ -50,7 +52,7 @@ function parseQuestions(text, pdfItems = []) {
 
     let answerLine = null;
     for (const l of lines) {
-      const m = l.match(/Đáp\s*án(?:\s*đúng)?[:\-\s]*([A-D])/i);
+      const m = l.match(/Đáp\s*án[:\-\s]*([A-D])/i);
       if (m) { answerLine = m[1].toUpperCase(); break; }
     }
 
@@ -81,6 +83,7 @@ function parseQuestions(text, pdfItems = []) {
   return out;
 }
 
+/* ------------------ Start quiz ------------------ */
 document.getElementById('startBtn').onclick = () => {
   mode = document.getElementById('modeSelect').value;
   current = 0;
@@ -96,31 +99,49 @@ document.getElementById('startBtn').onclick = () => {
 
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
 
+/* ------------------ Hiển thị câu hỏi ------------------ */
 function showQuestion() {
   const q = questions[current];
   document.getElementById('questionTitle').innerHTML = `<strong>Câu ${current + 1}/${questions.length}:</strong> ${q.question}`;
   const optsBox = document.getElementById('options'); optsBox.innerHTML = '';
+
   q.options.forEach(opt => {
     const lbl = document.createElement('label');
     const checked = userAns[current] === opt ? 'checked' : '';
     lbl.innerHTML = `<input type="radio" name="q" value="${opt}" ${checked}> ${opt}`;
+
+    // --- Review mode: hiển thị đúng/sai ngay ---
+    lbl.querySelector('input').onchange = e => {
+      userAns[current] = e.target.value;
+
+      // Xóa class cũ
+      optsBox.querySelectorAll('label').forEach(l => l.classList.remove('correct','wrong'));
+
+      if (mode === 'review') {
+        if (e.target.value === q.correct) lbl.classList.add('correct');
+        else lbl.classList.add('wrong');
+      }
+
+      updateProgress();
+    };
+
     optsBox.appendChild(lbl);
   });
-  document.querySelectorAll('input[name="q"]').forEach(inp => inp.onchange = e => {
-    userAns[current] = e.target.value;
-    updateProgress();
-  });
+
   updateProgress();
 }
 
+/* ------------------ Navigation ------------------ */
 document.getElementById('prevBtn').onclick = () => { if (current > 0) { current--; showQuestion(); } };
 document.getElementById('nextBtn').onclick = () => { if (current < questions.length - 1) { current++; showQuestion(); } };
+
 document.addEventListener('keydown', e => {
   if (quizArea.classList.contains('hidden')) return;
   if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
   if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
 });
 
+/* ------------------ Bảng tiến trình ------------------ */
 function renderProgress() {
   const box = document.getElementById('progressBoard');
   box.innerHTML = '';
@@ -137,18 +158,23 @@ function updateProgress() {
   document.querySelectorAll('.square').forEach((s, i) => {
     s.classList.remove('current', 'done', 'wrong');
     if (i === current) s.classList.add('current');
-    if (userAns[i]) s.classList.add('done');
+    if (userAns[i]) {
+      s.classList.add('done');
+      if (mode === 'review' && userAns[i] !== questions[i].correct) s.classList.add('wrong');
+    }
   });
   const percent = (userAns.filter(Boolean).length / questions.length) * 100;
   document.getElementById('progressBar').style.width = percent + '%';
 }
 
+/* ------------------ Timer ------------------ */
 function updateTimer() {
   const t = Math.floor((Date.now() - startTime) / 1000);
   const m = String(Math.floor(t / 60)).padStart(2, '0'), s = String(t % 60).padStart(2, '0');
   document.getElementById('timer').textContent = `⏱️ ${m}:${s}`;
 }
 
+/* ------------------ Nộp bài ------------------ */
 document.getElementById('submitBtn').onclick = () => {
   if (mode === 'exam' && !confirm('Nộp bài ngay?')) return;
   let score = 0; const wrongs = [];
