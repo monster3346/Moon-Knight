@@ -1,6 +1,6 @@
 /* =========================================================
    Moon Learn 学 – Ôn & Thi Trắc Nghiệm
-   Phiên bản: dùng mammoth (giữ nguyên gốc) + thang 10 + tự chuyển câu + hiện đáp án đúng
+   Phiên bản: mammoth (gốc) + thang 10 + tự chuyển câu + chỉ review mới hiện đáp án đúng
    ========================================================= */
 let questions   = [],
     current     = 0,
@@ -131,7 +131,7 @@ function shuffle(a) {
 }
 
 /* =========================================================
-   4. HIỂN THỊ CÂU HỎI – CÓ TỰ ĐỘNG CHUYỂN & HIỆN ĐÁP ÁN ĐÚNG KHI SAI
+   4. HIỂN THỊ CÂU HỎI – CHỈ REVIEW MỚI HIỆN ĐÁP ÁN ĐÚNG KHI SAI
    ========================================================= */
 function showQuestion() {
   const q = questions[current];
@@ -146,20 +146,20 @@ function showQuestion() {
 
     lbl.querySelector('input').onchange = (e) => {
       userAns[current] = e.target.value;
-
-      /* --- Xóa class cũ --- */
       optsBox.querySelectorAll('label').forEach(l => l.classList.remove('correct', 'wrong'));
 
-      /* --- Nếu chọn sai → hiện luôn đáp án đúng --- */
-      if (e.target.value !== q.correct) {
-        lbl.classList.add('wrong');
-        /* Tìm label chứa đáp án đúng để tô xanh */
-        const correctLabel = [...optsBox.querySelectorAll('label')].find(
-          l => l.textContent.trim() === q.correct
-        );
-        if (correctLabel) correctLabel.classList.add('correct');
-      } else {
-        lbl.classList.add('correct');
+      /* --- CHỈ review mới hiện đúng/sai --- */
+      if (mode === 'review') {
+        if (e.target.value === q.correct) {
+          lbl.classList.add('correct');
+        } else {
+          lbl.classList.add('wrong');
+          /* Hiện luôn đáp án đúng */
+          const correctLabel = [...optsBox.querySelectorAll('label')].find(
+            l => l.textContent.trim() === q.correct
+          );
+          if (correctLabel) correctLabel.classList.add('correct');
+        }
       }
 
       updateProgress();
