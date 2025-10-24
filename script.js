@@ -17,7 +17,7 @@ hiddenDiv.style.left = '-9999px';
 document.body.appendChild(hiddenDiv);
 
 /* =========================================================
-   1. ĐỌC FILE PDF / DOCX
+   1. ĐỌC FILE PDF / DOCX (KHÔNG ĐỔI)
    ========================================================= */
 const fileInput = document.getElementById('fileInput');
 fileInput.addEventListener('change', async (e) => {
@@ -62,7 +62,7 @@ async function readDOCX(file) {
 }
 
 /* =========================================================
-   2. TÁCH CÂU HỎI & ĐÁP ÁN
+   2. TÁCH CÂU HỎI & ĐÁP ÁN (KHÔNG ĐỔI)
    ========================================================= */
 function parseQuestions(text, pdfItems = []) {
   text = text.replace(/\r/g, '\n');
@@ -145,7 +145,7 @@ function parseQuestions(text, pdfItems = []) {
 }
 
 /* =========================================================
-   3. KHỞI ĐỘNG THI
+   3. KHỞI ĐỘNG THI (KHÔNG ĐỔI)
    ========================================================= */
 document.getElementById('startBtn').onclick = () => {
   mode = document.getElementById('modeSelect').value;
@@ -217,7 +217,7 @@ function showQuestion() {
 }
 
 /* =========================================================
-   5. ĐIỀU HƯỚNG & PHÍM TẮT
+   5. ĐIỀU HƯỚNG & PHÍM TẮT (KHÔNG ĐỔI)
    ========================================================= */
 document.getElementById('prevBtn').onclick = () => { if (current > 0) { current--; showQuestion(); } };
 document.getElementById('nextBtn').onclick = () => { if (current < questions.length - 1) { current++; showQuestion(); } };
@@ -229,7 +229,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   6. BẢNG TIẾN TRÌNH
+   6. BẢNG TIẾN TRÌNH (KHÔNG ĐỔI)
    ========================================================= */
 function renderProgress() {
   const box = document.getElementById('progressBoard');
@@ -257,7 +257,7 @@ function updateProgress() {
 }
 
 /* =========================================================
-   7. ĐỒNG HỒ THI
+   7. ĐỒNG HỒ THI (KHÔNG ĐỔI)
    ========================================================= */
 function updateTimer() {
   const t = Math.floor((Date.now() - startTime) / 1000);
@@ -267,7 +267,7 @@ function updateTimer() {
 }
 
 /* =========================================================
-   8. NỘP BÀI – TÍNH ĐIỂM THANG 10
+   8. NỘP BÀI – TÍNH ĐIỂM THANG 10 & LÀM LẠI CÂU SAI
    ========================================================= */
 document.getElementById('submitBtn').onclick = () => {
   if (mode === 'exam' && !confirm('Nộp bài ngay?')) return;
